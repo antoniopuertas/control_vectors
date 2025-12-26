@@ -2,6 +2,37 @@
 
 Tools for training and testing control vectors using representation engineering.
 
+## Overview
+
+This repository is a toolkit for control vectors using representation engineering - a technique to steer the behavior of large language models (LLMs) without fine-tuning.
+
+### What it does
+
+Control vectors allow you to modify how an LLM responds by adjusting its internal representations at specific layers. Think of it like a "personality dial" for AI models.
+
+**Example:**
+- Set honesty coefficient to `+2.0` → Model becomes more truthful
+- Set honesty coefficient to `-2.0` → Model becomes more deceptive
+
+### How it works
+
+1. **Create contrasting prompts** - e.g., "Act as an honest assistant" vs "Act as a deceptive assistant"
+2. **Capture hidden states** - Record the model's internal activations for both
+3. **Compute difference vector** - The difference between these activations becomes the "control vector"
+4. **Apply at inference** - Add/subtract this vector to steer behavior
+
+### Key components
+
+- Uses the `repeng` library under the hood
+- Targets Mistral-7B model (but adaptable)
+- Operates on middle layers (~14-26 for a 32-layer model)
+
+### Use cases
+
+- Research on AI interpretability
+- Studying how models represent concepts internally
+- Controllable text generation
+
 ## Installation
 
 ```bash

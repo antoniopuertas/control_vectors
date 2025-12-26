@@ -51,6 +51,45 @@ This will:
 3. Test it with various coefficients
 4. Launch an interactive demo
 
+## Example Scripts
+
+Choose the example that fits your hardware:
+
+| Script | Model | Size | Requirements |
+|--------|-------|------|--------------|
+| `example.py` | Mistral-7B-Instruct-v0.1 | ~14GB | GPU with 16GB+ VRAM |
+| `example_small.py` | TinyLlama-1.1B-Chat-v1.0 | ~2GB | GPU with 4GB VRAM or 8GB RAM |
+| `example_tiny.py` | SmolLM-135M-Instruct | ~270MB | Only ~500MB RAM needed |
+
+### Full example (Mistral-7B)
+
+```bash
+python example.py
+```
+- Model: `mistralai/Mistral-7B-Instruct-v0.1`
+- Layers: 32
+- Best quality results, requires significant GPU memory
+
+### Small example (TinyLlama-1.1B)
+
+```bash
+python example_small.py
+```
+- Model: `TinyLlama/TinyLlama-1.1B-Chat-v1.0`
+- Layers: 22
+- Good balance between quality and resource usage
+- Compatible models: `Qwen/Qwen2-1.5B-Instruct`, `microsoft/phi-2`
+
+### Tiny example (SmolLM-135M)
+
+```bash
+python example_tiny.py
+```
+- Model: `HuggingFaceTB/SmolLM-135M-Instruct`
+- Layers: 30
+- Runs on CPU, minimal resources needed
+- Great for testing and development
+
 ## Files
 
 | File | Description |
@@ -59,7 +98,9 @@ This will:
 | `layers.py` | Layer selection utilities |
 | `train.py` | Training script |
 | `test_vector.py` | Testing and validation |
-| `example.py` | Complete example |
+| `example.py` | Complete example (Mistral-7B) |
+| `example_small.py` | Small model example (TinyLlama-1.1B) |
+| `example_tiny.py` | Tiny model example (SmolLM-135M) |
 | `capture_activations.py` | Capture and save model hidden states |
 | `HOWTO_activations.md` | Guide for capturing activations |
 

@@ -294,7 +294,7 @@ def main():
     parser.add_argument(
         "--model",
         type=str,
-        default="mistralai/Mistral-7B-Instruct-v0.1",
+        default="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
         help="HuggingFace model name"
     )
     parser.add_argument(
@@ -370,9 +370,9 @@ def main():
         output_path = args.output
 
     else:
-        # Default: capture a simple test prompt
-        test_prompt = "[INST] Tell me about yourself. [/INST]"
-        print(f"\nCapturing activations for test prompt: {test_prompt}")
+        # Default: capture a simple test prompt (TinyLlama ChatML format)
+        test_prompt = "<|user|>\nTell me about yourself.</s>\n<|assistant|>\n"
+        print(f"\nCapturing activations for test prompt...")
         data = capture_activations(
             model, tokenizer, test_prompt, layers, args.use_hooks
         )

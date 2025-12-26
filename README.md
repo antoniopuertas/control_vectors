@@ -60,6 +60,8 @@ This will:
 | `train.py` | Training script |
 | `test_vector.py` | Testing and validation |
 | `example.py` | Complete example |
+| `capture_activations.py` | Capture and save model hidden states |
+| `HOWTO_activations.md` | Guide for capturing activations |
 
 ## Usage
 
@@ -138,6 +140,23 @@ layers = get_recommended_layers(num_layers=32)  # [14, 15, ..., 26]
 # By concept type
 layers = get_layers_for_concept(32, "honesty")  # [14, 15, ..., 23]
 ```
+
+## Capturing activations
+
+Save internal model hidden states for analysis:
+
+```bash
+# Single prompt
+python capture_activations.py --prompt "Tell me a story" --output my_activations
+
+# Contrastive activations for a concept
+python capture_activations.py --concept honesty --output honesty_acts
+
+# Specific layers only
+python capture_activations.py --prompt "Hello" --layers "14,15,16,17"
+```
+
+See [HOWTO_activations.md](HOWTO_activations.md) for detailed usage and examples.
 
 ## References
 

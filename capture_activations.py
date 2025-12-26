@@ -251,18 +251,58 @@ def save_activations(
         print(f"Saved tensors to: {tensor_path}")
 
     if save_metadata:
-        # Create JSON-serializable metadata
-        metadata = {
-            "timestamp": datetime.now().isoformat(),
-            "num_layers": data.get("num_layers"),
-            "captured_layers": data.get("captured_layers"),
-            "prompt": data.get("prompt"),
-            "tokens": data.get("tokens"),
-        }
+        # Check if this is contrastive data or single-prompt data
+        if "positive" in data and "negative" in data:
+            # Contrastive data structure
+            metadata = {
+                "timestamp": datetime.now().isoformat(),
+                "type": "contrastive",
+                "concept": data.get("concept"),
+                "num_pairs": data.get("num_pairs"),
+                "layers": data.get("layers"),
+                "positive_samples": [],
+                "negative_samples": [],
+            }
 
-        # Add stats if activations present
-        if "activations" in data:
-            metadata["stats"] = compute_activation_stats(data)
+            # Add metadata for each sample
+            for i, (pos, neg) in enumerate(zip(data["positive"], data["negative"])):
+                pos_info = {
+                    "index": i,
+                    "prompt": pos.get("prompt"),
+                    "num_layers": pos.get("num_layers"),
+                    "captured_layers": pos.get("captured_layers"),
+                    "tokens": pos.get("tokens"),
+                }
+                neg_info = {
+                    "index": i,
+                    "prompt": neg.get("prompt"),
+                    "num_layers": neg.get("num_layers"),
+                    "captured_layers": neg.get("captured_layers"),
+                    "tokens": neg.get("tokens"),
+                }
+
+                # Add stats if activations present
+                if "activations" in pos:
+                    pos_info["stats"] = compute_activation_stats(pos)
+                if "activations" in neg:
+                    neg_info["stats"] = compute_activation_stats(neg)
+
+                metadata["positive_samples"].append(pos_info)
+                metadata["negative_samples"].append(neg_info)
+        else:
+            # Single-prompt data structure
+            metadata = {
+                "timestamp": datetime.now().isoformat(),
+                "type": "single",
+                "num_layers": data.get("num_layers"),
+                "captured_layers": data.get("captured_layers"),
+                "prompt": data.get("prompt"),
+                "tokens": data.get("tokens"),
+            }
+
+            # Add stats if activations present
+            if "activations" in data:
+                metadata["stats"] = compute_activation_stats(data)
 
         json_path = output_path.with_suffix(".json")
         with open(json_path, "w") as f:

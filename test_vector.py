@@ -3,7 +3,7 @@ Testing and validation utilities for control vectors.
 """
 
 import torch
-from typing import Optional
+from typing import Optional, List, Dict, Tuple
 from dataclasses import dataclass
 
 
@@ -17,7 +17,7 @@ class TestResult:
     is_coherent: bool
 
 
-def check_coherence(text: str) -> tuple[float, list[str]]:
+def check_coherence(text: str) -> Tuple[float, List[str]]:
     """
     Check text for signs of degradation/incoherence.
 
@@ -66,10 +66,10 @@ def test_vector_basic(
     model,
     tokenizer,
     vector,
-    test_prompts: list[str],
-    coefficients: list[float] = None,
+    test_prompts: List[str],
+    coefficients: Optional[List[float]] = None,
     max_new_tokens: int = 150,
-) -> dict[str, dict[float, TestResult]]:
+) -> Dict[str, Dict[float, TestResult]]:
     """
     Run basic A/B comparison tests on a control vector.
 
@@ -87,7 +87,7 @@ def test_vector_basic(
     if coefficients is None:
         coefficients = [-2, -1, 0, 1, 2]
 
-    results = {}
+    results: Dict[str, Dict[float, TestResult]] = {}
 
     settings = {
         "max_new_tokens": max_new_tokens,
@@ -129,10 +129,10 @@ def find_optimal_coefficient(
     tokenizer,
     vector,
     test_prompt: str,
-    coeff_range: tuple[float, float] = (-3, 3),
+    coeff_range: Tuple[float, float] = (-3, 3),
     steps: int = 13,
     max_new_tokens: int = 100,
-) -> tuple[float, float, dict]:
+) -> Tuple[float, float, dict]:
     """
     Find the optimal coefficient by sweeping a range.
 
@@ -191,7 +191,7 @@ def find_optimal_coefficient(
     return best_positive, best_negative, results
 
 
-def print_comparison(results: dict[str, dict[float, TestResult]]):
+def print_comparison(results: Dict[str, Dict[float, TestResult]]):
     """Pretty print test results."""
     for prompt, coeff_results in results.items():
         print(f"\n{'='*70}")
@@ -215,7 +215,7 @@ def print_comparison(results: dict[str, dict[float, TestResult]]):
             print(response.strip())
 
 
-def create_test_suite(concept: str) -> dict[str, list[str]]:
+def create_test_suite(concept: str) -> Dict[str, List[str]]:
     """
     Create a test suite for a given concept.
 
@@ -288,7 +288,7 @@ def run_full_evaluation(
     tokenizer,
     vector,
     concept: str,
-    coefficients: list[float] = None,
+    coefficients: Optional[List[float]] = None,
 ) -> dict:
     """
     Run a full evaluation of a control vector.

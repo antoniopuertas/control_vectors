@@ -10,7 +10,7 @@ import torch
 import json
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, Dict, Any, Union
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from dataset import make_dataset_from_concept, PERSONA_PAIRS
@@ -21,7 +21,7 @@ def capture_activations(
     model,
     tokenizer,
     prompt: str,
-    layers: Optional[list[int]] = None,
+    layers: Optional[List[int]] = None,
     use_hooks: bool = False,
 ) -> dict:
     """
@@ -92,9 +92,9 @@ def capture_activations(
 def capture_contrastive_activations(
     model,
     tokenizer,
-    positive_prompts: list[str],
-    negative_prompts: list[str],
-    layers: Optional[list[int]] = None,
+    positive_prompts: List[str],
+    negative_prompts: List[str],
+    layers: Optional[List[int]] = None,
 ) -> dict:
     """
     Capture activations for contrastive prompt pairs.
@@ -135,7 +135,7 @@ def capture_from_concept(
     model,
     tokenizer,
     concept: str,
-    layers: Optional[list[int]] = None,
+    layers: Optional[List[int]] = None,
     max_samples: int = 10,
 ) -> dict:
     """
@@ -242,11 +242,11 @@ def save_activations(
         save_tensors: Whether to save tensor data (.pt file)
         save_metadata: Whether to save metadata (.json file)
     """
-    output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
 
     if save_tensors:
-        tensor_path = output_path.with_suffix(".pt")
+        tensor_path = path.with_suffix(".pt")
         torch.save(data, tensor_path)
         print(f"Saved tensors to: {tensor_path}")
 
@@ -254,14 +254,16 @@ def save_activations(
         # Check if this is contrastive data or single-prompt data
         if "positive" in data and "negative" in data:
             # Contrastive data structure
-            metadata = {
+            positive_samples: List[Dict[str, Any]] = []
+            negative_samples: List[Dict[str, Any]] = []
+            metadata: Dict[str, Any] = {
                 "timestamp": datetime.now().isoformat(),
                 "type": "contrastive",
                 "concept": data.get("concept"),
                 "num_pairs": data.get("num_pairs"),
                 "layers": data.get("layers"),
-                "positive_samples": [],
-                "negative_samples": [],
+                "positive_samples": positive_samples,
+                "negative_samples": negative_samples,
             }
 
             # Add metadata for each sample
@@ -287,8 +289,8 @@ def save_activations(
                 if "activations" in neg:
                     neg_info["stats"] = compute_activation_stats(neg)
 
-                metadata["positive_samples"].append(pos_info)
-                metadata["negative_samples"].append(neg_info)
+                positive_samples.append(pos_info)
+                negative_samples.append(neg_info)
         else:
             # Single-prompt data structure
             metadata = {
@@ -304,7 +306,7 @@ def save_activations(
             if "activations" in data:
                 metadata["stats"] = compute_activation_stats(data)
 
-        json_path = output_path.with_suffix(".json")
+        json_path = path.with_suffix(".json")
         with open(json_path, "w") as f:
             json.dump(metadata, f, indent=2)
         print(f"Saved metadata to: {json_path}")

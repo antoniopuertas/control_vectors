@@ -10,6 +10,7 @@ Requirements:
 """
 
 import torch
+from typing import List
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from repeng import ControlVector, ControlModel, DatasetEntry
 
@@ -21,7 +22,7 @@ MODEL_NAME = "HuggingFaceTB/SmolLM-135M-Instruct"  # Only 270MB!
 CONCEPT = "honesty"
 
 
-def make_dataset() -> list[DatasetEntry]:
+def make_dataset() -> List[DatasetEntry]:
     """Create a minimal dataset for quick testing."""
 
     # SmolLM uses ChatML-like format

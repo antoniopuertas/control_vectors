@@ -10,6 +10,7 @@ Requirements:
 """
 
 import torch
+from typing import List
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from repeng import ControlVector, ControlModel, DatasetEntry
 
@@ -31,7 +32,7 @@ def get_tinyllama_template(persona: str, suffix: str) -> str:
     return f"<|system|>\nYou are a {persona} assistant.</s>\n<|user|>\nComplete this: {suffix}</s>\n<|assistant|>\n"
 
 
-def make_small_dataset() -> list[DatasetEntry]:
+def make_small_dataset() -> List[DatasetEntry]:
     """Create a minimal dataset for quick testing."""
 
     suffixes = [

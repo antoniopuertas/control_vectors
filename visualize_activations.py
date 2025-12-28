@@ -12,6 +12,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
+from typing import Optional
 
 
 def load_activations(path: str) -> dict:
@@ -78,7 +79,7 @@ def compute_layer_differences(data: dict) -> dict:
 def plot_layer_analysis(
     layer_metrics: dict,
     concept: str = "concept",
-    output_path: str = None,
+    output_path: Optional[str] = None,
     show: bool = True,
 ):
     """

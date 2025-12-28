@@ -4,6 +4,7 @@ Training script for control vectors using repeng.
 
 import argparse
 import torch
+from typing import Optional, List
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from repeng import ControlVector, ControlModel
 
@@ -34,8 +35,8 @@ def load_model(model_name: str, device: str = "auto"):
 def train_control_vector(
     model_name: str,
     concept: str,
-    output_path: str = None,
-    layers: list[int] = None,
+    output_path: Optional[str] = None,
+    layers: Optional[List[int]] = None,
     device: str = "auto",
     export_gguf: bool = False,
 ) -> ControlVector:

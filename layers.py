@@ -3,7 +3,7 @@ Layer selection utilities for control vectors.
 """
 
 import torch
-from typing import Optional
+from typing import Optional, List, Dict
 import matplotlib.pyplot as plt
 
 
@@ -35,7 +35,7 @@ def get_recommended_layers(
     num_layers: int,
     start_pct: float = 0.45,
     end_pct: float = 0.85,
-) -> list[int]:
+) -> List[int]:
     """
     Get recommended layers for a model with given number of layers.
 
@@ -52,7 +52,7 @@ def get_recommended_layers(
     return list(range(start_layer, end_layer))
 
 
-def get_layers_for_model(model_name: str) -> list[int]:
+def get_layers_for_model(model_name: str) -> List[int]:
     """
     Get recommended layers based on model name.
 
@@ -73,7 +73,7 @@ def get_layers_for_model(model_name: str) -> list[int]:
     return get_recommended_layers(32)
 
 
-def get_repeng_layer_spec(num_layers: int) -> list[int]:
+def get_repeng_layer_spec(num_layers: int) -> List[int]:
     """
     Get layer specification in repeng's negative indexing format.
 
@@ -96,7 +96,7 @@ def compute_layer_sensitivity(
     vector,
     test_prompt: str,
     coeff: float = 2.0,
-) -> dict[int, float]:
+) -> Dict[int, float]:
     """
     Compute how sensitive each layer is to the control vector.
 
@@ -145,7 +145,7 @@ def compute_layer_sensitivity(
         diff = sum(1 for a, b in zip(baseline_text, steered_text) if a != b)
         diff += abs(len(baseline_text) - len(steered_text))
 
-        sensitivities[layer_idx] = diff
+        sensitivities[layer_idx] = float(diff)
         control_model.reset()
 
     return sensitivities
@@ -156,11 +156,11 @@ def find_optimal_layers(
     tokenizer,
     dataset,
     test_prompt: str,
-    concept_keywords: list[str],
+    concept_keywords: List[str],
     coeff: float = 2.0,
     plot: bool = True,
     output_path: Optional[str] = None,
-) -> list[int]:
+) -> List[int]:
     """
     Find optimal layers by training vectors on each layer and measuring effect.
 
@@ -250,7 +250,7 @@ CONCEPT_LAYER_HINTS = {
 }
 
 
-def get_layers_for_concept(num_layers: int, concept_type: str) -> list[int]:
+def get_layers_for_concept(num_layers: int, concept_type: str) -> List[int]:
     """
     Get recommended layers based on concept type.
 

@@ -3,7 +3,7 @@ Dataset creation utilities for control vector training.
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List, Tuple
 from repeng import DatasetEntry
 
 
@@ -46,7 +46,7 @@ DEFAULT_SUFFIXES = [
 ]
 
 
-def get_chat_template(model_name: str) -> tuple[str, str]:
+def get_chat_template(model_name: str) -> Tuple[str, str]:
     """Return the appropriate chat template tags for a model."""
     templates = {
         "mistral": ("[INST]", "[/INST]"),
@@ -68,12 +68,12 @@ def get_chat_template(model_name: str) -> tuple[str, str]:
 
 def make_dataset(
     template: str,
-    positive_personas: list[str],
-    negative_personas: list[str],
-    suffixes: list[str],
+    positive_personas: List[str],
+    negative_personas: List[str],
+    suffixes: List[str],
     user_tag: str = "[INST]",
     asst_tag: str = "[/INST]",
-) -> list[DatasetEntry]:
+) -> List[DatasetEntry]:
     """
     Create a dataset of contrastive pairs for control vector training.
 
@@ -107,10 +107,10 @@ def make_dataset(
 
 def make_dataset_from_concept(
     concept: str,
-    suffixes: Optional[list[str]] = None,
+    suffixes: Optional[List[str]] = None,
     model_name: str = "mistral",
-    templates: Optional[list[str]] = None,
-) -> list[DatasetEntry]:
+    templates: Optional[List[str]] = None,
+) -> List[DatasetEntry]:
     """
     Create a dataset from a predefined concept name.
 
@@ -154,11 +154,11 @@ def make_dataset_from_concept(
 
 
 def create_truncated_suffixes(
-    texts: list[str],
+    texts: List[str],
     tokenizer,
     min_tokens: int = 1,
     max_tokens: int = 15,
-) -> list[str]:
+) -> List[str]:
     """
     Create truncated versions of texts for more diverse training data.
 
@@ -185,7 +185,7 @@ def create_truncated_suffixes(
     return truncated
 
 
-def load_suffixes_from_file(filepath: str) -> list[str]:
+def load_suffixes_from_file(filepath: str) -> List[str]:
     """Load suffixes from a JSON or text file."""
     import json
 

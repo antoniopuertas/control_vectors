@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 from typing import Optional
+import warnings
 
 
 def load_activations(path: str) -> dict:
@@ -34,6 +35,7 @@ def compute_layer_differences(data: dict) -> dict:
     layers = list(first_pos["activations"].keys())
 
     layer_metrics = {}
+    nan_warning_shown = False
 
     for layer_idx in layers:
         pos_norms = []
@@ -52,25 +54,46 @@ def compute_layer_differences(data: dict) -> dict:
             pos_last = pos_act[:, -1, :].float()
             neg_last = neg_act[:, -1, :].float()
 
+            # Skip samples with NaN values
+            if torch.isnan(pos_last).any() or torch.isnan(neg_last).any():
+                if not nan_warning_shown:
+                    warnings.warn(
+                        "Activation data contains NaN values. These samples will be skipped. "
+                        "Consider re-capturing activations with CUDA stability fixes."
+                    )
+                    nan_warning_shown = True
+                continue
+
             # Compute metrics
-            pos_norms.append(pos_last.norm().item())
-            neg_norms.append(neg_last.norm().item())
+            pos_norm = pos_last.norm().item()
+            neg_norm = neg_last.norm().item()
+
+            # Skip infinite values
+            if not np.isfinite(pos_norm) or not np.isfinite(neg_norm):
+                continue
+
+            pos_norms.append(pos_norm)
+            neg_norms.append(neg_norm)
 
             diff = pos_last - neg_last
-            diff_norms.append(diff.norm().item())
+            diff_norm = diff.norm().item()
+            if np.isfinite(diff_norm):
+                diff_norms.append(diff_norm)
 
             cosine = torch.nn.functional.cosine_similarity(
                 pos_last, neg_last, dim=-1
             ).item()
-            cosine_sims.append(cosine)
+            if np.isfinite(cosine):
+                cosine_sims.append(cosine)
 
+        # Handle empty lists (all samples had NaN)
         layer_metrics[layer_idx] = {
-            "pos_norm_mean": np.mean(pos_norms),
-            "neg_norm_mean": np.mean(neg_norms),
-            "diff_norm_mean": np.mean(diff_norms),
-            "diff_norm_std": np.std(diff_norms),
-            "cosine_sim_mean": np.mean(cosine_sims),
-            "cosine_sim_std": np.std(cosine_sims),
+            "pos_norm_mean": np.mean(pos_norms) if pos_norms else 0.0,
+            "neg_norm_mean": np.mean(neg_norms) if neg_norms else 0.0,
+            "diff_norm_mean": np.mean(diff_norms) if diff_norms else 0.0,
+            "diff_norm_std": np.std(diff_norms) if len(diff_norms) > 1 else 0.0,
+            "cosine_sim_mean": np.mean(cosine_sims) if cosine_sims else 0.0,
+            "cosine_sim_std": np.std(cosine_sims) if len(cosine_sims) > 1 else 0.0,
         }
 
     return layer_metrics
@@ -181,9 +204,24 @@ def plot_layer_analysis(
 def print_layer_ranking(layer_metrics: dict, concept: str = "concept"):
     """Print a text-based ranking of layers by importance."""
 
+    # Filter out layers with no valid data (diff_norm_mean == 0 indicates all NaN)
+    valid_layers = {
+        k: v for k, v in layer_metrics.items()
+        if v["diff_norm_mean"] > 0 and np.isfinite(v["diff_norm_mean"])
+    }
+
+    if not valid_layers:
+        print("\n" + "=" * 60)
+        print(f"Layer Ranking for '{concept}' Concept")
+        print("=" * 60)
+        print("ERROR: No valid layer data found. All activations may contain NaN values.")
+        print("Please re-capture activations with CUDA stability fixes enabled.")
+        print("=" * 60)
+        return
+
     sorted_layers = sorted(
-        layer_metrics.keys(),
-        key=lambda l: layer_metrics[l]["diff_norm_mean"],
+        valid_layers.keys(),
+        key=lambda l: valid_layers[l]["diff_norm_mean"],
         reverse=True
     )
 
@@ -193,14 +231,16 @@ def print_layer_ranking(layer_metrics: dict, concept: str = "concept"):
     print(f"{'Rank':<6}{'Layer':<8}{'Diff Norm':<14}{'Cosine Sim':<14}{'Importance'}")
     print("-" * 60)
 
-    max_diff = layer_metrics[sorted_layers[0]]["diff_norm_mean"]
+    max_diff = valid_layers[sorted_layers[0]]["diff_norm_mean"]
+    if max_diff == 0:
+        max_diff = 1  # Avoid division by zero
 
     for rank, layer in enumerate(sorted_layers, 1):
-        m = layer_metrics[layer]
+        m = valid_layers[layer]
         importance = m["diff_norm_mean"] / max_diff * 100
 
-        # Visual bar
-        bar_len = int(importance / 5)
+        # Visual bar (safely handle edge cases)
+        bar_len = min(20, max(0, int(importance / 5)))
         bar = "█" * bar_len
 
         print(f"{rank:<6}{layer:<8}{m['diff_norm_mean']:<14.4f}{m['cosine_sim_mean']:<14.4f}{bar}")

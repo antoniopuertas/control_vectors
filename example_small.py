@@ -13,6 +13,10 @@ import torch
 from typing import List
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from repeng import ControlVector, ControlModel, DatasetEntry
+from cuda_utils import configure_cuda_for_stability, get_device_map
+
+# Configure CUDA for numerical stability (prevents NaN on H100 and similar GPUs)
+configure_cuda_for_stability()
 
 # =========================================================================
 # Configuration
@@ -84,16 +88,19 @@ def main():
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token_id = tokenizer.eos_token_id
 
-    # Load in float16 for GPU, float32 for CPU
-    dtype = torch.float16 if device == "cuda" else torch.float32
+    # Load in float32 for numerical stability
+    model_dtype = torch.float32
+
+    # Use safe device_map (avoid 'auto' which can cause NaN on some GPUs)
+    device_map = get_device_map(device)
 
     model = AutoModelForCausalLM.from_pretrained(
         MODEL_NAME,
-        torch_dtype=dtype,
-        device_map="auto" if device == "cuda" else None,
+        dtype=model_dtype,
+        device_map=device_map,
     )
 
-    if device == "cpu":
+    if device_map is None:
         model = model.to(device)
 
     print(f"  Model loaded! Layers: {model.config.num_hidden_layers}")

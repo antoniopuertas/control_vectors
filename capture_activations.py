@@ -15,6 +15,10 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from dataset import make_dataset_from_concept, PERSONA_PAIRS
 from layers import get_recommended_layers
+from cuda_utils import configure_cuda_for_stability, get_device_map, validate_tensor
+
+# Configure CUDA for numerical stability (prevents NaN on H100 and similar GPUs)
+configure_cuda_for_stability()
 
 
 def capture_activations(
@@ -78,6 +82,11 @@ def capture_activations(
         for i, hidden_state in enumerate(all_hidden_states[1:]):  # Skip embedding
             if layers is None or i in layers:
                 activations[i] = hidden_state.detach().cpu()
+
+    # Validate activations for NaN/Inf
+    for layer_idx, tensor in activations.items():
+        if not validate_tensor(tensor, f"Layer {layer_idx} activations"):
+            print(f"  Consider using CPU or checking CUDA configuration")
 
     return {
         "activations": activations,
@@ -320,11 +329,18 @@ def load_model(model_name: str, device: str = "auto"):
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token_id = 0
 
+    # Use safe device_map (avoid 'auto' which can cause NaN on some GPUs)
+    device_map = get_device_map(device)
+
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
-        torch_dtype=torch.float16,
-        device_map=device,
+        dtype=torch.float32,  # Use float32 for activation capture accuracy
+        device_map=device_map,
     )
+
+    # If no device_map, manually move to device
+    if device_map is None and device == "cpu":
+        model = model.to("cpu")
 
     return model, tokenizer
 

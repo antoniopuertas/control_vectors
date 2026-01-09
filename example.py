@@ -16,6 +16,10 @@ from repeng import ControlVector, ControlModel
 from dataset import make_dataset_from_concept, PERSONA_PAIRS
 from layers import get_recommended_layers, get_repeng_layer_spec
 from test_vector import test_vector_basic, print_comparison, find_optimal_coefficient
+from cuda_utils import configure_cuda_for_stability, get_device_map
+
+# Configure CUDA for numerical stability (prevents NaN on H100 and similar GPUs)
+configure_cuda_for_stability()
 
 
 def main():
@@ -40,10 +44,13 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     tokenizer.pad_token_id = 0
 
+    # Use safe device_map (avoid 'auto' which can cause NaN on some GPUs)
+    device_map = get_device_map(DEVICE)
+
     model = AutoModelForCausalLM.from_pretrained(
         MODEL_NAME,
-        torch_dtype=torch.float16,
-        device_map="auto",
+        dtype=torch.float32,
+        device_map=device_map,
     )
 
     # =========================================================================
